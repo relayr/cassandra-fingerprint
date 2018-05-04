@@ -4,6 +4,7 @@
 import argparse
 import json
 import logging
+import sys
 
 import cassandra
 import cassandra.cluster
@@ -156,12 +157,17 @@ def run():
     parser.add_argument('-d', dest='loglevel', action='store_const',
                         const=logging.DEBUG, default=logging.INFO,
                         help='enable debug')
-    parser.add_argument('--pretty', dest='pretty', action='store_true',
-                        help='pretty print a fingerprint')
+    parser.add_argument('--pretty', dest='pretty', action='store_const',
+                        help='pretty print a fingerprint',
+                        default={},
+                        const={"sort_keys": True, "indent": 3}
+                        )
     sp = parser.add_subparsers(title="subcommands", dest="command")
     sp.required = True
-    parser_t = sp.add_parser('template',
-                             help='create a fingerprint from template')
+    parser_t = sp.add_parser('check',
+                             help='''check fingerprint against a database
+                             Exit status is set to 1 if fingerprints differ.
+                             Fingerprint is not returned.''')
     parser_t.add_argument('fingerprint', type=str,
                           help='use old fingerprint as template for a new one'
                           )
@@ -185,23 +191,26 @@ def run():
     args = parser.parse_args()
     logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s',
                         level=args.loglevel)
-    if args.command == 'template':
+    if args.command == 'check':
         with open(args.fingerprint, 'r') as fp:
             template_report = json.load(fp)
-            fingerprint = generate_fingerprint([args.host], None,
-                                               template_report,
-                                               [],
-                                               None)
-    else:
+        fingerprint = generate_fingerprint([args.host], None,
+                                           template_report,
+                                           [],
+                                           None)
+        print(json.dumps(fingerprint, **args.pretty))
+        if template_report != fingerprint:
+            logging.warning("Template and database differ")
+            sys.exit(1)
+    elif args.command == 'fingerprint':
         fingerprint = generate_fingerprint([args.host], args.sample_size,
                                            {},
                                            args.transient_tables,
                                            args.custom_queries
                                            )
-    if args.pretty:
-        print(json.dumps(fingerprint, sort_keys=True, indent=3))
+        print(json.dumps(fingerprint, **args.pretty))
     else:
-        print(json.dumps(fingerprint))
+        raise Exception("Not implemented")
 
 
 if __name__ == '__main__':
