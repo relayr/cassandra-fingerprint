@@ -156,6 +156,8 @@ def run():
     parser.add_argument('-d', dest='loglevel', action='store_const',
                         const=logging.DEBUG, default=logging.INFO,
                         help='enable debug')
+    parser.add_argument('--pretty', dest='pretty', action='store_true',
+                        help='pretty print a fingerprint')
     sp = parser.add_subparsers(title="subcommands", dest="command")
     sp.required = True
     parser_t = sp.add_parser('template',
@@ -196,7 +198,10 @@ def run():
                                            args.transient_tables,
                                            args.custom_queries
                                            )
-    print(json.dumps(fingerprint))
+    if args.pretty:
+        print(json.dumps(fingerprint, sort_keys=True, indent=3))
+    else:
+        print(json.dumps(fingerprint))
 
 
 if __name__ == '__main__':
