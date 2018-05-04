@@ -178,13 +178,13 @@ def run():
                           metavar='QUERY',
                           help='''execute custom query and append it to a fingerprint.
                           Order of result rows should not change between
-                          executions. Could be set multiply times.
+                          executions. Could be set more than once.
                           The queries are executed in order they are specified.
                           ''')
     parser_c.add_argument('-t',  '--transient-table', dest='transient_tables',
-                          action='append', default=[],
+                          action='append', default=[], metavar='TABLE_NAME',
                           help='Skip data collection for a table. Could be' +
-                          ' set multiply times. Format: <keyspace>.<table>'
+                          ' set more than once. Format: <keyspace>.<table>'
                           )
     parser.add_argument('host', type=str, help='address of cassandra cluster',
                         default='127.0.0.1', nargs='?')
